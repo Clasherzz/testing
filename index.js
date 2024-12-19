@@ -7,7 +7,7 @@ const app = express();
 
 // Configure multer to handle form-data uploads
 const upload = multer({ storage: multer.memoryStorage() });
-
+app.use(express.json());
 // GET endpoint for basic testing
 app.get('/', (req, res) => {
   res.send('This is a self-signed SSL endpoint!');
@@ -36,28 +36,57 @@ app.post('/submit-form', upload.single('file'), (req, res) => {
 });
 
 
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', (req, res) => {
   try {
-    // Access form fields
-    const field1 = req.body.field1;
-    const field2 = req.body.field2;
+    const contentType = req.headers['content-type'];
+    console.log(contentType)
+    let response = {};
 
-    // Access the uploaded file
-    const uploadedFile = req.file;
+    if (contentType.includes('multipart/form-data')) {
+      // Handle multipart/form-data
+      upload.single('file')(req, res, (err) => {
+        if (err) {
+          console.error('Upload error:', err);
+          return res.status(400).json({ error: 'Error uploading file' });
+        }
 
-    console.log('Field 1:', field1);
-    console.log('Field 2:', field2);
-    console.log('Uploaded File:', uploadedFile);
+        const field1 = req.body.field1;
+        const field2 = req.body.field2;
+        const uploadedFile = req.file;
 
-    // Respond to the client
-    res.status(200).json({
-      message: 'File uploaded successfully!',
-      file: uploadedFile,
-      fields: { field1, field2 },
-    });
+        console.log('Field 1:', field1);
+        console.log('Field 2:', field2);
+        console.log('Uploaded File:', uploadedFile);
+
+        response = {
+          message: 'Multipart file uploaded successfully!',
+          file: uploadedFile,
+          fields: { field1, field2 },
+        };
+
+        return res.status(200).json(response);
+      });
+    } else if (contentType.includes('application/json')) {
+      // Handle JSON payload
+      console.log(req.body);
+      // console.log('Field 1:', field1);
+      // console.log('Field 2:', field2);
+      // console.log('Additional Data:', additionalData);
+
+      // response = {
+      //   message: 'JSON data processed successfully!',
+      //   data: { field1, field2, additionalData },
+      // };
+
+     // return res.status(200).json(response);
+    } else {
+      // Unsupported content type
+      console.error('Unsupported content type:', contentType);
+      return res.status(400).json({ error: 'Unsupported content type' });
+    }
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ error: 'Failed to process the request' });
+    return res.status(500).json({ error: 'Failed to process the request' });
   }
 });
 
