@@ -2,6 +2,8 @@ const fs = require('fs');
 const https = require('https');
 const express = require('express');
 const multer = require('multer');
+const { graphqlHTTP } = require('express-graphql');
+const { buildSchema } = require('graphql');
 
 const app = express();
 
@@ -34,6 +36,31 @@ app.post('/submit-form', upload.single('file'), (req, res) => {
     },
   });
 });
+
+
+// Define a simple schema and resolver
+const schema = buildSchema(`
+  type Query {
+    placeholder: String
+  }
+`);
+
+const root = {
+  placeholder: () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve('This is a delayed response');
+      }, 60000); // 1 minute delay
+    });
+  },
+};
+
+// GraphQL endpoint
+app.use('/graphql', graphqlHTTP({
+  schema: schema,
+  rootValue: root,
+  graphiql: true,
+}));
 
 
 app.post('/upload', (req, res) => {
@@ -95,16 +122,16 @@ const privateKey = fs.readFileSync('key.pem', 'utf8');
 const certificate = fs.readFileSync('cert.pem', 'utf8');
 
 // HTTPS server options
-const httpsOptions = {
-  key: privateKey,
-  cert: certificate,
-};
+// const httpsOptions = {
+//   key: privateKey,
+//   cert: certificate,
+// };
 
-// Create the HTTPS server
-const httpsServer = https.createServer(httpsOptions, app);
+// // Create the HTTPS server
+// const httpsServer = https.createServer(httpsOptions, app);
 
 // Start the HTTPS server
 const PORT = 3443;
-httpsServer.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Self-signed HTTPS server running at https://localhost:${PORT}`);
 });
