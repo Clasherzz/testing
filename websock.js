@@ -12,20 +12,39 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
     console.log('Client connected');
+    console.log('Request headers:', req.headers);
+    console.log('Request params:', req.url);
+
     ws.send("Hi");
     // Handle incoming messages
     ws.on('message', (message) => {
         console.log('Received:', message);
 
         // Echo the same message back
-        ws.send(message);
+        ws.send(message + "Send");
+        // Send the message as a byte frame
+        const byteFrame = Buffer.from(message);
+        ws.send(byteFrame);
     });
+
+    ws.on('ping', () => {
+        console.log(`Ping received at: ${new Date().toLocaleTimeString()}`);
+    });
+
+    const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.ping();
+            console.log("ping send");
+        }
+    ws.send(JSON.stringify({ header: 'Custom Header', timestamp: new Date().toISOString() }));
+    }, 30000);
 
     // Handle client disconnections
     ws.on('close', () => {
         console.log('Client disconnected');
+        clearInterval(pingInterval);
     });
 
     // Optional: Send a welcome message on connection
@@ -34,5 +53,5 @@ wss.on('connection', (ws) => {
 
 // Start the server
 server.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+    console.log(`Server is running at localhost:${port}`);
 });
