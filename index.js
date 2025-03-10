@@ -62,60 +62,147 @@ app.use('/graphql', graphqlHTTP({
   graphiql: true,
 }));
 
+app.post('/trial', upload.any(), (req, res) => {
+  console.log('Fields:', req.body); // Print text fields
+  console.log('Files:', req.files); // Print uploaded files
+
+  res.json({
+      message: 'Received form-data',
+      fields: req.body,
+      files: req.files.map(file => ({
+          fieldname: file.fieldname,
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size
+      }))
+  });
+});
+
+
 
 app.post('/upload', (req, res) => {
-  try {
-    const contentType = req.headers['content-type'];
-    console.log(contentType)
-    let response = {};
+  setTimeout(() => {
+    try {
+      console.log("entered inside upload");
+      const contentType = req.headers['content-type'];
+      console.log('Content-Type:', contentType);
+      
+      // Get query parameters
+      const queryParams = req.query;
+      console.log('Query Params:', queryParams);
+      
+      let response = {};
 
-    if (contentType.includes('multipart/form-data')) {
-      // Handle multipart/form-data
-      upload.single('file')(req, res, (err) => {
-        if (err) {
-          console.error('Upload error:', err);
-          return res.status(400).json({ error: 'Error uploading file' });
-        }
+      if (contentType.includes('multipart/form-data')) {
+        // Handle multipart/form-data
+        upload.single('file')(req, res, (err) => {
+          if (err) {
+            console.error('Upload error:', err);
+            return res.status(400).json({ error: 'Error uploading file' });
+          }
 
-        const field1 = req.body.field1;
-        const field2 = req.body.field2;
-        const uploadedFile = req.file;
+          const field1 = req.body.field1;
+          const field2 = req.body.field2;
+          const uploadedFile = req.file;
 
-        console.log('Field 1:', field1);
-        console.log('Field 2:', field2);
-        console.log('Uploaded File:', uploadedFile);
+          console.log('Field 1:', field1);
+          console.log('Field 2:', field2);
+          console.log('Uploaded File:', uploadedFile);
+
+          response = {
+            message: 'Multipart file uploaded successfully!',
+            file: uploadedFile,
+            fields: { field1, field2 },
+            queryParams: queryParams,
+          };
+
+          return res.status(200).json(response);
+        });
+      } else if (contentType.includes('application/json')) {
+        // Handle JSON payload
+        console.log('JSON Body:', req.body);
 
         response = {
-          message: 'Multipart file uploaded successfully!',
-          file: uploadedFile,
-          fields: { field1, field2 },
+          message: 'JSON data processed successfully!',
+          data: req.body,
+          queryParams: queryParams,
         };
 
         return res.status(200).json(response);
-      });
-    } else if (contentType.includes('application/json')) {
-      // Handle JSON payload
-      console.log(req.body);
-      // console.log('Field 1:', field1);
-      // console.log('Field 2:', field2);
-      // console.log('Additional Data:', additionalData);
-
-      // response = {
-      //   message: 'JSON data processed successfully!',
-      //   data: { field1, field2, additionalData },
-      // };
-
-     // return res.status(200).json(response);
-    } else {
-      // Unsupported content type
-      console.error('Unsupported content type:', contentType);
-      return res.status(400).json({ error: 'Unsupported content type' });
+      } else {
+        // Unsupported content type
+        console.error('Unsupported content type:', contentType);
+        return res.status(400).json({ error: 'Unsupported content type' });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({ error: 'Failed to process the request' });
     }
-  } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ error: 'Failed to process the request' });
-  }
+  }, 5000); // 1 minute delay
 });
+
+
+
+app.post('/upload1', (req, res) => {
+  
+    try {
+      const contentType = req.headers['content-type'];
+      console.log('Content-Type:', contentType);
+      
+      // Get query parameters
+      const queryParams = req.query;
+      console.log('Query Params:', queryParams);
+      
+      let response = {};
+
+      if (contentType.includes('multipart/form-data')) {
+        // Handle multipart/form-data
+        upload.single('file')(req, res, (err) => {
+          if (err) {
+            console.error('Upload error:', err);
+            return res.status(400).json({ error: 'Error uploading file' });
+          }
+
+          const field1 = req.body.field1;
+          const field2 = req.body.field2;
+          const uploadedFile = req.file;
+
+          console.log('Field 1:', field1);
+          console.log('Field 2:', field2);
+          console.log('Uploaded File:', uploadedFile);
+
+          response = {
+            message: 'Multipart file uploaded successfully!',
+            file: uploadedFile,
+            fields: { field1, field2 },
+            queryParams: queryParams,
+          };
+
+          return res.status(200).json(response);
+        });
+      } else if (contentType.includes('application/json')) {
+        // Handle JSON payload
+        console.log('JSON Body:', req.body);
+
+        response = {
+          message: 'JSON data processed successfully!',
+          data: req.body,
+          queryParams: queryParams,
+        };
+
+        return res.status(200).json(response);
+      } else {
+        // Unsupported content type
+        console.error('Unsupported content type:', contentType);
+        return res.status(400).json({ error: 'Unsupported content type' });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({ error: 'Failed to process the request' });
+    }
+   // 1 minute delay
+});
+
 
 // Self-signed certificate (ensure you have `key.pem` and `cert.pem` files)
 const privateKey = fs.readFileSync('key.pem', 'utf8');

@@ -13,7 +13,10 @@ const wss = new WebSocket.Server({ server });
 
 // Handle WebSocket connections
 wss.on('connection', (ws, req) => {
+
+
     console.log('Client connected');
+    console.log("no clients connected"+wss.clients.size);
     console.log('Request headers:', req.headers);
     console.log('Request params:', req.url);
 
@@ -44,6 +47,7 @@ wss.on('connection', (ws, req) => {
     // Handle client disconnections
     ws.on('close', () => {
         console.log('Client disconnected');
+        console.log("no clients connected"+wss.clients.size);
         clearInterval(pingInterval);
     });
 
